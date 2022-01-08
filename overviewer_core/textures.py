@@ -98,20 +98,12 @@ class Textures(object):
     def __getstate__(self):
         # we must get rid of the huge image lists, and other images
         attributes = self.__dict__.copy()
-        for attr in ['blockmap', 'biome_grass_texture', 'watertexture', 'lavatexture', 'firetexture', 'portaltexture', 'lightcolor', 'grasscolor', 'foliagecolor', 'watercolor', 'texture_cache']:
-            try:
-                del attributes[attr]
-            except KeyError:
-                pass
         attributes['jars'] = OrderedDict()
         return attributes
     def __setstate__(self, attrs):
         # regenerate textures, if needed
         for attr, val in list(attrs.items()):
             setattr(self, attr, val)
-        self.texture_cache = {}
-        if self.generated:
-            self.generate()
     
     ##
     ## The big one: generate()
@@ -122,6 +114,8 @@ class Textures(object):
         try:
             self.load_foliage_color()
             self.load_grass_color()
+            self.load_water_color()
+            self.load_light_color()
         except TextureException as e:
             logging.error(
                 "Your system is missing either assets/minecraft/textures/colormap/foliage.png "

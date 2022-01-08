@@ -33,6 +33,7 @@ import multiprocessing
 import time
 import logging
 from argparse import ArgumentParser
+from diskcache import Cache
 from collections import OrderedDict
 
 from overviewer_core import util
@@ -499,14 +500,26 @@ def main():
         # find or create the textures object
         texopts = util.dict_subset(render, ["texturepath", "bgcolor", "northdirection"])
         texopts_key = tuple(texopts.items())
+
+        #use diskcache for re-using generated textures
+        dcache = Cache("dcache")
         if texopts_key not in texcache:
-            tex = textures.Textures(**texopts)
-            logging.info("Generating textures...")
-            tex.generate()
-            logging.debug("Finished generating textures.")
+            dkey = str(os.path.getmtime(texopts["texturepath"])) #use modified time as key, invalidates cache when modified
+
+            if dcache.get(dkey):
+                logging.info("Got textures from dcache!")
+                tex = dcache[dkey]
+            else:
+                tex = textures.Textures(**texopts)
+                logging.info("Generating textures...")
+                tex.generate()
+                logging.debug("Finished generating textures.")
+                dcache[dkey] = tex
+
             texcache[texopts_key] = tex
         else:
             tex = texcache[texopts_key]
+
 
         try:
             logging.debug("Asking for regionset %r." % render['dimension'][1])
