@@ -1906,7 +1906,13 @@ class RegionSet(object):
                 blocklight_expanded[:,:,1::2] = (blocklight & 0xF0) >> 4
                 del blocklight
                 section['BlockLight'] = blocklight_expanded
-                section['Biomes'] = self._get_biomedata_v118(section)
+
+                #apparently this can be missing, at least it was with 1.18-papermc generated map
+                if 'biomes' in section:
+                    section['Biomes'] = self._get_biomedata_v118(section)
+                else:
+                    tmp = numpy.full((64,), 1, dtype=numpy.uint8)
+                    section['Biomes'] = tmp.reshape((4, 4, 4))
 
                 if 'block_states' in section:
                     (blocks, data) = self._get_blockdata_v118(section, unrecognized_block_types, longarray_unpacker)
