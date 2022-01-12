@@ -113,6 +113,8 @@ base_draw(void* data, RenderState* state, PyObject* src, PyObject* mask, PyObjec
         (((state->block == block_pumpkin_stem) || (state->block == block_melon_stem)) && (state->block_data != 7)) ||
         /* doublePlant grass & ferns */
         (state->block == block_double_plant && (state->block_data == 2 || state->block_data == 3)) ||
+        /* sugarcane/reeds (according to minecraft-fandom) */
+        (state->block == block_reeds) ||
         /* doublePlant grass & ferns tops */
         (state->block == block_double_plant && below_block == block_double_plant && (below_data == 2 || below_data == 3))) {
         /* do the biome stuff! */

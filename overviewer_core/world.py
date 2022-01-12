@@ -298,6 +298,82 @@ class RegionSet(object):
         self.empty_chunk = [None,None]
         logging.debug("Done scanning regions")
 
+        self._biomemap = [
+            'minecraft:the_void',
+            'minecraft:plains',
+            'minecraft:sunflower_plains',
+            'minecraft:snowy_plains',
+            'minecraft:ice_spikes',
+
+            'minecraft:desert',
+            'minecraft:swamp',
+            'minecraft:forest',
+            'minecraft:flower_forest',
+            'minecraft:birch_forest',
+
+            'minecraft:dark_forest',
+            'minecraft:old_growth_birch_forest',
+            'minecraft:old_growth_pine_taiga',
+            'minecraft:old_growth_spruce_taiga',
+            'minecraft:taiga',
+
+            'minecraft:snowy_taiga',
+            'minecraft:savanna',
+            'minecraft:savanna_plateau',
+            'minecraft:windswept_hills',
+            'minecraft:windswept_gravelly_hills',
+
+            'minecraft:windswept_forest',
+            'minecraft:windswept_savanna',
+            'minecraft:jungle',
+            'minecraft:sparse_jungle',
+            'minecraft:bamboo_jungle',
+
+            'minecraft:badlands',
+            'minecraft:eroded_badlands',
+            'minecraft:wooded_badlands',
+            'minecraft:meadow',
+            'minecraft:grove',
+
+            'minecraft:snowy_slopes',
+            'minecraft:frozen_peaks',
+            'minecraft:jagged_peaks',
+            'minecraft:stony_peaks',
+            'minecraft:river',
+
+            'minecraft:frozen_river',
+            'minecraft:beach',
+            'minecraft:snowy_beach',
+            'minecraft:stony_shore',
+            'minecraft:warm_ocean',
+
+            'minecraft:lukewarm_ocean',
+            'minecraft:deep_lukewarm_ocean',
+            'minecraft:ocean',
+            'minecraft:deep_ocean',
+            'minecraft:cold_ocean',
+
+            'minecraft:deep_cold_ocean',
+            'minecraft:frozen_ocean',
+            'minecraft:deep_frozen_ocean',
+            'minecraft:mushroom_fields',
+            'minecraft:dripstone_caves',
+
+            'minecraft:lush_caves',
+            'minecraft:nether_wastes',
+            'minecraft:warped_forest',
+            'minecraft:crimson_forest',
+            'minecraft:soul_sand_valley',
+
+            'minecraft:basalt_deltas',
+            'minecraft:the_end',
+            'minecraft:end_highlands',
+            'minecraft:end_midlands',
+            'minecraft:small_end_islands',
+
+            'minecraft:end_barrens'
+        ]
+
         self._blockmap = {
             'minecraft:air': (0, 0),
             'minecraft:cave_air': (0, 0),
@@ -1580,6 +1656,68 @@ class RegionSet(object):
 
         return (blocks, data)
 
+    def _packed_longarray_to_shorts_v118_biome(self, long_array, n, num_palette_entries):
+
+        #yes, i know
+        bits_per_value = 1
+        if num_palette_entries==1:
+            bits_per_value=1
+        elif num_palette_entries==2:
+            bits_per_value=1
+        elif num_palette_entries==3:
+            bits_per_value=2
+        elif num_palette_entries==4:
+            bits_per_value=2
+        elif num_palette_entries>=5:
+            bits_per_value=3
+        else:
+            raise Exception("oh no, oh no no no")
+
+        b = numpy.asarray(long_array, dtype=numpy.uint64)
+        result = numpy.zeros((n,), dtype=numpy.uint16)
+        shorts_per_long = 64 // bits_per_value
+        mask = (1 << bits_per_value) - 1
+
+        for i in range(shorts_per_long):
+            j = (n + shorts_per_long - 1 - i) // shorts_per_long
+            result[i::shorts_per_long] = (b[:j] >> (bits_per_value * i)) & mask
+
+        return result
+
+    def _get_biomedata_v118(self, section):
+        biomestag = section['biomes']
+        palette = biomestag.get('palette')
+        biome_data = biomestag.get('data')
+
+        # Translate each entry in the palette to biome id (int)
+        num_palette_entries = len(palette)
+        translated_biomes = numpy.zeros((num_palette_entries,), dtype=numpy.uint8) # biome ids
+
+        for i in range(num_palette_entries):
+            key = palette[i]
+            try:
+                translated_biomes[i] = self._biomemap.index(key)
+            except KeyError:
+                raise Exception("Unknown biome wanted, investigate!")
+                #translated_biomes[i] = self._biomemap.index(1)
+
+        if not biome_data:
+            #no biome-dataarray, means entire biome is palette[0]
+            tmp = numpy.full((64,), translated_biomes[0], dtype=numpy.uint8)
+            biomes = tmp.reshape((4, 4, 4))
+            return biomes
+
+        # Biome result-array
+        biomes = numpy.zeros((64,), dtype=numpy.uint8)
+
+        biomes_data_unpacked = self._packed_longarray_to_shorts_v118_biome(biome_data, 64, num_palette_entries)
+        biomes[:] = translated_biomes[biomes_data_unpacked]
+
+        # Turn the Data array into a 4x4x4 matrix, same as SkyLight
+        biomes = biomes.reshape((4, 4, 4))
+
+        return biomes
+
     def _get_blockdata_v113(self, section, unrecognized_block_types, longarray_unpacker):
         # Translate each entry in the palette to a 1.2-era (block, data) int pair.
         num_palette_entries = len(section['Palette'])
@@ -1734,24 +1872,6 @@ class RegionSet(object):
                                                 "mobs_spawned", "spawn", ""):
             raise ChunkDoesntExist("Chunk %s,%s doesn't exist" % (x,z))
 
-        # Turn the Biomes array into a 16x16 numpy array
-        if 'Biomes' in chunk_data and len(chunk_data['Biomes']) > 0:
-            biomes = chunk_data['Biomes']
-            if isinstance(biomes, bytes):
-                biomes = numpy.frombuffer(biomes, dtype=numpy.uint8)
-            else:
-                biomes = numpy.asarray(biomes)
-            biomes = reshape_biome_data(biomes)
-        else:
-            # Worlds converted by Jeb's program may be missing the Biomes key.
-            # Additionally, 19w09a worlds have an empty array as biomes key
-            # in some cases.
-
-            # TODO: Implement paletted biomes for >21w39a
-            biomes = numpy.zeros((16, 16), dtype=numpy.uint8)
-        chunk_data['Biomes'] = biomes
-        chunk_data['NewBiomes'] = (len(biomes.shape) == 3)
-
         unrecognized_block_types = {}
         for section in chunk_data['Sections']:
 
@@ -1786,6 +1906,7 @@ class RegionSet(object):
                 blocklight_expanded[:,:,1::2] = (blocklight & 0xF0) >> 4
                 del blocklight
                 section['BlockLight'] = blocklight_expanded
+                section['Biomes'] = self._get_biomedata_v118(section)
 
                 if 'block_states' in section:
                     (blocks, data) = self._get_blockdata_v118(section, unrecognized_block_types, longarray_unpacker)
@@ -1997,7 +2118,7 @@ class RotatedRegionSet(RegionSetWrapper):
         for section in chunk_data['Sections']:
             section = dict(section)
             newsections.append(section)
-            for arrayname in ['Blocks', 'Data', 'SkyLight', 'BlockLight']:
+            for arrayname in ['Blocks', 'Data', 'SkyLight', 'BlockLight', 'Biomes']:
                 array = section[arrayname]
                 # Since the anvil change, arrays are arranged with axes Y,Z,X
                 # numpy.rot90 always rotates the first two axes, so for it to
@@ -2008,15 +2129,6 @@ class RotatedRegionSet(RegionSetWrapper):
                 section[arrayname] = array
         chunk_data['Sections'] = newsections
 
-        if chunk_data['NewBiomes']:
-            array = numpy.swapaxes(chunk_data['Biomes'], 0, 2)
-            array = numpy.rot90(array, self.north_dir)
-            chunk_data['Biomes'] = numpy.swapaxes(array, 0, 2)
-        else:
-            # same as above, for biomes (Z/X indexed)
-            biomes = numpy.swapaxes(chunk_data['Biomes'], 0, 1)
-            biomes = numpy.rot90(biomes, self.north_dir)
-            chunk_data['Biomes'] = numpy.swapaxes(biomes, 0, 1)
         return chunk_data
 
     def get_chunk_mtime(self, x, z):
