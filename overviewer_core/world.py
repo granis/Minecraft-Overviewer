@@ -1658,20 +1658,8 @@ class RegionSet(object):
 
     def _packed_longarray_to_shorts_v118_biome(self, long_array, n, num_palette_entries):
 
-        #yes, i know
-        bits_per_value = 1
-        if num_palette_entries==1:
-            bits_per_value=1
-        elif num_palette_entries==2:
-            bits_per_value=1
-        elif num_palette_entries==3:
-            bits_per_value=2
-        elif num_palette_entries==4:
-            bits_per_value=2
-        elif num_palette_entries>=5:
-            bits_per_value=3
-        else:
-            raise Exception("oh no, oh no no no")
+        # num_palette_entries must be >= 2, if 0 or 1 all biomedata is palette[0] anyway.
+        bits_per_value = 32 - (32 - ((num_palette_entries-1).bit_length()))
 
         b = numpy.asarray(long_array, dtype=numpy.uint64)
         result = numpy.zeros((n,), dtype=numpy.uint16)
