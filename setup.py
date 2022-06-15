@@ -103,6 +103,17 @@ def recursive_package_data(src, package_dir='overviewer_core'):
 
     return ret
 
+# Finds the system-wide path from within a venv.
+# Taken from https://github.com/pyinstaller/pyinstaller/blob/master/PyInstaller/hooks/pre_find_module_path/hook-distutils.py
+def find_system_module_path():
+    # opcode is not a virtualenv module, so we can use it to find the stdlib. Technique taken from virtualenv's
+    # "distutils" package detection at
+    # https://github.com/pypa/virtualenv/blob/16.3.0/virtualenv_embedded/distutils-init.py#L5
+    import opcode
+
+    system_module_path = os.path.normpath(os.path.dirname(opcode.__file__))
+    return system_module_path
+
 #
 # py2exe options
 #
@@ -183,7 +194,23 @@ c_overviewer_includes = ['overviewer.h', 'rendermodes.h']
 c_overviewer_files = ['overviewer_core/src/' + s for s in c_overviewer_files]
 c_overviewer_includes = ['overviewer_core/src/' + s for s in c_overviewer_includes]
 
-setup_kwargs['ext_modules'].append(Extension('overviewer_core.c_overviewer', c_overviewer_files, include_dirs=['.', numpy_include] + pil_include, depends=c_overviewer_includes, extra_link_args=[]))
+# really ugly hack for our scuffed CI, remove this once we move
+# to something else. The problem is that virtualenv somehow
+# now overrides the base_prefix (which it shouldn't do) which
+# makes distutils unable to find our Python library
+python_lib_dirs = None
+if platform.system() == 'Windows':
+    ci_python_dir = os.path.split(find_system_module_path())[0]
+    python_lib_dirs = [os.path.join(ci_python_dir, "Libs")]
+
+setup_kwargs['ext_modules'].append(Extension(
+    'overviewer_core.c_overviewer',
+    c_overviewer_files,
+    include_dirs=['.', numpy_include] + pil_include,
+    library_dirs=python_lib_dirs,
+    depends=c_overviewer_includes,
+    extra_link_args=[]
+))
 
 
 # tell build_ext to build the extension in-place
