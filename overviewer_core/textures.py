@@ -325,7 +325,7 @@ class Textures(object):
             if verbose: logging.info("Did not find file {0} in jar {1}".format(filename, jarpath))
             
 
-        raise TextureException("Could not find the textures while searching for '{0}'. Try specifying the 'texturepath' option in your config file.\nSet it to the path to a Minecraft Resource pack.\nAlternately, install the Minecraft client (which includes textures)\nAlso see <http://docs.overviewer.org/en/latest/running/#installing-the-textures>\n(Remember, this version of Overviewer requires a 1.17-compatible resource pack)\n(Also note that I won't automatically use snapshots; you'll have to use the texturepath option to use a snapshot jar)".format(filename))
+        raise TextureException("Could not find the textures while searching for '{0}'. Try specifying the 'texturepath' option in your config file.\nSet it to the path to a Minecraft Resource pack.\nAlternately, install the Minecraft client (which includes textures)\nAlso see <http://docs.overviewer.org/en/latest/running/#installing-the-textures>\n(Remember, this version of Overviewer requires a 1.19-compatible resource pack)\n(Also note that I won't automatically use snapshots; you'll have to use the texturepath option to use a snapshot jar)".format(filename))
 
     def load_image_texture(self, filename):
         # Textures may be animated or in a different resolution than 16x16.  
@@ -1091,7 +1091,7 @@ block(blockid=15, top_image="assets/minecraft/textures/block/iron_ore.png")
 # coal ore
 block(blockid=16, top_image="assets/minecraft/textures/block/coal_ore.png")
 
-@material(blockid=[17, 162, 11306, 11307, 11308, 11309, 11310, 11311, 1008, 1009], 
+@material(blockid=[17, 162, 11306, 11307, 11308, 11309, 11310, 11311, 1008, 1009, 1126],
           data=list(range(12)), solid=True)
 def wood(self, blockid, data):
     # extract orientation and wood type frorm data bits
@@ -1157,7 +1157,11 @@ def wood(self, blockid, data):
             1: ("stripped_warped_stem.png", None),
             2: ("crimson_stem.png", None),
             3: ("stripped_crimson_stem.png", None),
-        }
+        },
+        1126: {
+            0: ("mangrove_log_top.png", "mangrove_log.png"),
+            1: ("stripped_mangrove_log_top.png", "stripped_mangrove_log.png"),
+        },
     }
 
     top_f, side_f = wood_tex[blockid].get(wood_type, wood_tex[blockid][0])
@@ -1194,6 +1198,8 @@ def leaves(self, blockid, data):
         t = self.load_image_texture("assets/minecraft/textures/block/flowering_azalea_leaves.png")
     elif (blockid, data) == (18, 7):
         t = self.load_image_texture("assets/minecraft/textures/block/azalea_leaves.png")
+    elif (blockid, data) == (18, 8):
+        t = self.load_image_texture("assets/minecraft/textures/block/mangrove_leaves.png")
     return self.build_block(t, t)
 
 # sponge
@@ -1692,10 +1698,10 @@ block(blockid=42, top_image="assets/minecraft/textures/block/iron_block.png")
 # double slabs and slabs
 # these wooden slabs are unobtainable without cheating, they are still
 # here because lots of pre-1.3 worlds use this blocks, add prismarine slabs
-@material(blockid=[43, 44, 181, 182, 204, 205] + list(range(11340, 11359)) +
+@material(blockid=[43, 44, 181, 182, 204, 205, 1124] + list(range(11340, 11359)) +
           list(range(1027, 1030)) + list(range(1072, 1080)) + list(range(1103, 1107)),
           data=list(range(16)),
-          transparent=[44, 182, 205] + list(range(11340, 11359)) + list(range(1027, 1030)) +
+          transparent=[44, 182, 205, 1124] + list(range(11340, 11359)) + list(range(1027, 1030)) +
           list(range(1072, 1080)) + list(range(1103, 1107)), solid=True)
 def slabs(self, blockid, data):
     if blockid == 44 or blockid == 182: 
@@ -1812,6 +1818,8 @@ def slabs(self, blockid, data):
             1106: "assets/minecraft/textures/block/deepslate_tiles.png",
         }
         top = side = self.load_image_texture(deepslate_tex[blockid]).copy()
+    elif blockid == 1124:
+        top = side = self.load_image_texture("assets/minecraft/textures/block/mud_bricks.png").copy()
 
     if blockid == 43 or blockid == 181 or blockid == 204: # double slab
         return self.build_block(top, side)
@@ -6368,3 +6376,11 @@ def spore_blossom(self, blockid, data):
     alpha_over(img, base_top, (0, 0), base_top)
     return img
 
+
+block(blockid=1121, top_image="assets/minecraft/textures/block/mud.png")
+block(blockid=1122, top_image="assets/minecraft/textures/block/packed_mud.png")
+block(blockid=1123, top_image="assets/minecraft/textures/block/mud_bricks.png")
+block(blockid=1125, top_image="assets/minecraft/textures/block/mangrove_roots_top.png",
+      side_image="assets/minecraft/textures/block/mangrove_roots_side.png")
+block(blockid=1127, top_image="assets/minecraft/textures/block/muddy_mangrove_roots_top.png",
+      side_image="assets/minecraft/textures/block/muddy_mangrove_roots_side.png")
