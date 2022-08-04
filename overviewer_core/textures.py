@@ -125,7 +125,7 @@ class Textures(object):
             raise e
         
         # generate biome grass mask
-        self.biome_grass_texture = self.build_block(self.load_image_texture("assets/minecraft/textures/block/grass_block_top.png"), self.load_image_texture("assets/minecraft/textures/block/grass_block_side_overlay.png"))
+        self.biome_grass_texture = self.build_block(self.load_image_texture("assets/minecraft/textures/block/grass_block_top.png"), self.load_image_texture("assets/minecraft/textures/block/grass_block_top.png"))
         
         # generate the blocks
         global blockmap_generators
@@ -945,9 +945,9 @@ def stone(self, blockid, data):
 @material(blockid=2, data=list(range(11))+[0x10,], solid=True)
 def grass(self, blockid, data):
     # 0x10 bit means SNOW
-    side_img = self.load_image_texture("assets/minecraft/textures/block/grass_block_side.png")
+    side_img = self.load_image_texture("assets/minecraft/textures/block/grass_block_top.png")
     if data & 0x10:
-        side_img = self.load_image_texture("assets/minecraft/textures/block/grass_block_snow.png")
+        side_img = self.load_image_texture("assets/minecraft/textures/block/snow.png")
     img = self.build_block(self.load_image_texture("assets/minecraft/textures/block/grass_block_top.png"), side_img)
     if not data & 0x10:
         alpha_over(img, self.biome_grass_texture, (0, 0), self.biome_grass_texture)
