@@ -3,7 +3,7 @@ Minecraft Overviewer - fork
 ====================================
 By Andrew Brown and contributors (see CONTRIBUTORS.rst).
 
-Fork in use at https://www.xtralarge.se
+Fork in use at https://maps.xtralarge.se
 
 Features:
 
