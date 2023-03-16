@@ -51,7 +51,7 @@ You will need the following:
 - The Numpy Extension for Python.
 - The extensions can be installed via::
 
-    c:\python37\python.exe -m pip -U numpy pillow
+    c:\python37\python.exe -m pip install -U numpy pillow diskcache
 
 
 Building with Visual Studio
@@ -133,6 +133,7 @@ You will need the following packages on Debian-derived distributions (e.g. Ubunt
 * python3-pil or python3-pillow (the latter is usually aliased to the former)
 * python3-dev
 * python3-numpy
+* python3-diskcache
 
 .. note::
     If you choose to install pillow through pip instead of your distribution's package
@@ -167,6 +168,10 @@ macOS
 #. Install numpy::
 
     pip install numpy
+
+#. Install diskcache::
+
+    pip install diskcache
 
 #. Download the Pillow source files from https://github.com/python-pillow/Pillow/releases/latest and unpack the tar.gz file and move it to a directory you can remember
 #. Download the Minercaft Overviewer source-code from https://overviewer.org/builds/overviewer-latest.tar.gz
